@@ -1,6 +1,7 @@
 <p align="center">
   <img src="test_images/logo.png" />
 </p>
+
 # EVC-Net: Multi-scale V-Net with Conditional Random Fields for Brain Extraction
 EVC-Net is a supervised method for skulls stripping.
 
