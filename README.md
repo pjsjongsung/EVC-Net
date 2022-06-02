@@ -7,12 +7,14 @@ The main code is in src/models.py.
 Training and testing examples are given as a jupyter notebook in examples.
 
 # Required Packages
+```
 dipy
 numpy
 scikit-image
 scipy
 SimpleCRF
 tensorflow
+```
 
 # Downloading
 ```
