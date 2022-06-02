@@ -24,6 +24,18 @@ def set_GPU():
     strategy = tf.distribute.MirroredStrategy()
     return strategy
 
+# prepare image for input
+def __prepare_img(file_path):
+    image_data, affine = load_nifti(file_path)
+    shape = image_data.shape
+    image_data = np.squeeze(image_data)
+    image_data = __normalize(image_data)
+    image_data, new_affine = __transform_img(image_data, affine, (128, 128, 128))
+    image_data = np.reshape(image_data, (128, 128, 128, 1))
+
+    return image_data, new_affine, shape
+
+
 # normalization function
 def __normalize(input_image):
     """Internal function for normalizing the images"""
@@ -422,18 +434,42 @@ def test_model(model, input_dir, output_dir, batch_size=1, model_type='evnet', c
             dense_crf_param['BilateralModsStds'] = (4.0,)
         else:
             dense_crf_param = crf_param
+
+    if os.path.isdir(input_dir) == False:
+        image_data, new_affine, shape = __prepare_img(input_dir)
+        inputs = np.expand_dims(image_data, 0)
+        if model_type != 'vnet':
+            inputs = {"input_1": inputs, "input_2": resize(inputs, (inputs.shape[0], 64, 64, 64, 1)), 
+                      "input_3": resize(inputs, (inputs.shape[0], 32, 32, 32, 1)), 
+                      "input_4": resize(inputs, (inputs.shape[0], 16, 16, 16, 1)), "input_5": resize(image_data, (inputs.shape[0], 8, 8, 8, 1))}
+
+        prediction = model.predict(inputs)
+        pred_output = np.reshape(prediction, (128,128,128))       
+        if model_type == 'evcnet':
+            prob_labels = np.stack([1-pred_output, pred_output], axis=-1).astype(np.float32)
+            int_data = np.reshape(inputs["input_1"]*255, (128, 128, 128, 1)).astype(np.uint8)
+            result = denseCRF3D.densecrf3d(int_data, prob_labels, dense_crf_param).astype(np.float32)
+        
+            pred_output = result
+
+        pred_output, old_affine = __recover(pred_output, new_affine, shape)
+        i = np.where(pred_output >= 0.5)
+        j = np.where(pred_output < 0.5)
+        pred_output[i] = 1.0
+        pred_output[j] = 0.0
+        pred_output = __largest(np.abs(1-__largest(np.abs(1-pred_output))))
+        save_nifti(output_dir, pred_output, old_affine)
+        print(input_dir + " processed")
+        return
+
     inputs = np.zeros((batch_size, 128, 128, 128, 1))
     new_affines = np.zeros((batch_size, 4, 4))
     file_names = []
-
     idx = 0
     n_files = len(os.listdir(input_dir))
     for i, file_path in enumerate(sorted(os.listdir(input_dir))):
-        image_data, affine = load_nifti(os.path.join(input_dir, file_path))
-        image_data = np.squeeze(image_data)
-        image_data = __normalize(image_data)
+        image_data, new_affine, shape = __prepare_img(os.path.join(input_dir, file_path))
         shape = image_data.shape
-        image_data, new_affine = __transform_img(image_data, affine, (128, 128, 128))
         inputs[idx] = np.reshape(image_data, (128, 128, 128, 1))
         new_affines[idx] = new_affine
         file_names.append(file_path)
@@ -447,12 +483,12 @@ def test_model(model, input_dir, output_dir, batch_size=1, model_type='evnet', c
         
         if model_type != 'vnet':
             inputs = {"input_1": inputs, "input_2": resize(inputs, (inputs.shape[0], 64, 64, 64, 1)), 
-                    "input_3": resize(inputs, (inputs.shape[0], 32, 32, 32, 1)), 
-                    "input_4": resize(inputs, (inputs.shape[0], 16, 16, 16, 1)), "input_5": resize(image_data, (inputs.shape[0], 8, 8, 8, 1))}
+                      "input_3": resize(inputs, (inputs.shape[0], 32, 32, 32, 1)), 
+                      "input_4": resize(inputs, (inputs.shape[0], 16, 16, 16, 1)), "input_5": resize(image_data, (inputs.shape[0], 8, 8, 8, 1))}
 
         prediction = model.predict(inputs)
         for b_idx in range(prediction.shape[0]):
-            pred_output = np.reshape(prediction[b_idx], [128,128,128])       
+            pred_output = np.reshape(prediction[b_idx], (128,128,128))       
             if model_type == 'evcnet':
                 prob_labels = np.stack([1-pred_output, pred_output], axis=-1).astype(np.float32)
                 int_data = np.reshape(inputs["input_1"]*255, (128, 128, 128, 1)).astype(np.uint8)
