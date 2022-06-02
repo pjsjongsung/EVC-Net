@@ -2,7 +2,7 @@
 EVC-Net is a supervised method for skulls stripping.
 
 The model uses a novel deep learning architecture with CRFs to enhance the efficiency and accuracy of the algorithm.
-<img src='test_images/model.png' width=1000>
+<img src='test_images/model_flow.png' width=1000>
 
 This repo provides a python code for training and testing the model.
 
