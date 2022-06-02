@@ -1,12 +1,14 @@
 # EVC-Net: Multi-scale V-Net with Conditional Random Fields for Brain Extraction
+EVC-Net is a novel deep learning model with CRF for skulls stripping.
+<img src='test_images/readme_figure.png' width=1000>
 
 This repo provides a python code for training and testing the skull stripping models.
 
 The main code is in src/models.py.
 
 Training and testing examples are given as a jupyter notebook in examples.
-
-# Required Packages
+***
+## Required Packages
 ```
 dipy
 numpy
@@ -16,14 +18,14 @@ SimpleCRF
 tensorflow
 ```
 
-# Downloading
+## Downloading
 ```
 git clone git@github.com:pjsjongsung/EVC-Net.git
 git lfs fetch
 git lfs pull
 ```
 
-# Simplest way to test
+## Simplest way to test
 ```
 import src.models as models
 import tensorflow as tf
