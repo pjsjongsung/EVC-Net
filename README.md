@@ -6,7 +6,6 @@ This repo provides a python code for training and testing the skull stripping mo
 
 The main code is in src/models.py.
 
-Training and testing examples are given as a jupyter notebook in examples.
 [Training example](examples/training_example.ipynb) and [Testing example](examples/testing_example.ipynb) are provided as an example of how to use the model.
 ***
 ## Required Packages
