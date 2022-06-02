@@ -6,6 +6,11 @@ The main code is in src/models.py.
 
 Training and testing examples are given as a jupyter notebook in examples.
 
+# Downloading
+git clone git@github.com:pjsjongsung/EVC-Net.git
+git lfs fetch
+git lfs pull
+
 # Simplest way to test
 ```
 import src.models as models
