@@ -32,12 +32,17 @@ git lfs pull
 import src.models as models
 import tensorflow as tf
 
+# input = 'path/to/nifti_file'
+# output = 'path/to/preferred/mask_location'
 input_dir = 'where/the/nifti_files/are'
 output_dir = 'where/the/output_files/should_be'
 
 model = tf.keras.models.load_model('trained_models/evnet/', custom_objects={'dice_coef': models.dice_coef})
+# models.test_model(model, input, output, batch_size=1, model_type='evcnet', crf_param=None)
 models.test_model(model, input_dir, output_dir, batch_size=1, model_type='evcnet', crf_param=None)
 ```
+models.test_model puts the output masks of the brain in the specified output_dir.
+
 ***
 ## Some output examples
 <img src='test_images/readme_figure.png' width=1000>
