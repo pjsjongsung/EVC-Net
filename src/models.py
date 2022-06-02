@@ -41,7 +41,7 @@ def __transform_img(input_image, affine, new_shape):
     new_img = affine_transform(input_image, inv_affine, output_shape=(256, 256, 256))
     
     final_img = resize(new_img, new_shape)
-    return final_img
+    return final_img, new_affine
 
 # recover the image back to its original space
 def __recover(input_image, affine, new_shape):
@@ -156,9 +156,9 @@ def __data_gen(file_list, label_list, training=False, model_type='evnet'):
                 else:
                     image_data = np.pad(image_data[:-r_float2, :-r_float3, :-r_float4], ((r_float2, 0), (r_float3, 0), (r_float4, 0)), mode='constant')
                     label_data = np.pad(label_data[:-r_float2, :-r_float3, :-r_float4], ((r_float2, 0), (r_float3, 0), (r_float4, 0)), mode='constant')
-        image_data = np.expand_dims(__transform_img(image_data, affine, (128, 128, 128)), -1)
-        label_data = __transform_img(label_data, affine, (128, 128, 128))
-
+        image_data, _ = __transform_img(image_data, affine, (128, 128, 128))
+        image_data = np.expand_dims(image_data, -1)
+        label_data, _ = __transform_img(label_data, affine, (128, 128, 128))
         if model_type == 'vnet':
             yield (image_data, label_data)
         else:
@@ -204,10 +204,10 @@ def create_dataset(files, labels, training='False', model_type='evnet', batch_si
         The 4D denoised DWI data.
     """
     if model_type != 'vnet':
-        output_types=({"input_1":tf.float32, "input_2":tf.float32, "input_3":tf.float32, "input_4":tf.float32, "input_5":tf.float32}, tf.float32),
+        output_types=({"input_1":tf.float32, "input_2":tf.float32, "input_3":tf.float32, "input_4":tf.float32, "input_5":tf.float32}, tf.float32)
         output_shapes=({"input_1":(128, 128, 128, 1), "input_2":(64, 64, 64, 1), "input_3":(32, 32, 32, 1), "input_4":(16, 16, 16, 1), "input_5":(8, 8, 8, 1)}, (128, 128, 128))
     else:
-        output_types=(tf.float32, tf.float32),
+        output_types=(tf.float32, tf.float32)
         output_shapes=((128, 128, 128, 1), (128, 128, 128))
     
     ds = tf.data.Dataset.from_generator(
@@ -455,12 +455,12 @@ def test_model(model, input_dir, output_dir, batch_size=1, model_type='evnet', c
             pred_output = np.reshape(prediction[b_idx], [128,128,128])       
             if model_type == 'evcnet':
                 prob_labels = np.stack([1-pred_output, pred_output], axis=-1).astype(np.float32)
-                int_data = np.reshape(inputs["inputs_1"]*255, (128, 128, 128, 1)).astype(np.uint8)
+                int_data = np.reshape(inputs["input_1"]*255, (128, 128, 128, 1)).astype(np.uint8)
                 result = denseCRF3D.densecrf3d(int_data, prob_labels, dense_crf_param).astype(np.float32)
             
                 pred_output = result
 
-            pred_output, old_affine = __recover(pred_output, new_affine[b_idx], shape)
+            pred_output, old_affine = __recover(pred_output, new_affines[b_idx], shape)
             i = np.where(pred_output >= 0.5)
             j = np.where(pred_output < 0.5)
             pred_output[i] = 1.0
