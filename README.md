@@ -3,7 +3,7 @@
 </p>
 
 # EVC-Net: Multi-scale V-Net with Conditional Random Fields for Brain Extraction
-EVC-Net is a supervised method for skulls stripping.
+EVC-Net (https://arxiv.org/abs/2206.02837) is a supervised method for skulls stripping.
 
 The model uses a novel deep learning architecture with CRFs to enhance the efficiency and accuracy of the algorithm.
 <img src='test_images/model_flow.png' width=1000>
